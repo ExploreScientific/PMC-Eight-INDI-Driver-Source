@@ -1,14 +1,15 @@
 # Explore Scientific PMC-Eight INDI driver ownership.
 #
-# GitHub will request this team for PRs that touch PMC-Eight driver files.
-# The team must exist in the ExploreScientific organization and have write
-# permission on this repository for CODEOWNERS review requests to work.
+# GitHub will request this account for PRs that touch PMC-Eight driver files.
+# If this repository is later moved under a GitHub organization, replace
+# @ExploreScientific with an engineering team such as
+# @ExploreScientific/pmc-eight-indi-maintainers.
 
-/.github/CODEOWNERS @ExploreScientific/pmc-eight-indi-maintainers
-/.github/PULL_REQUEST_TEMPLATE/pmc8_driver_change.md @ExploreScientific/pmc-eight-indi-maintainers
-/explorescientific/ @ExploreScientific/pmc-eight-indi-maintainers
+/.github/CODEOWNERS @ExploreScientific
+/.github/PULL_REQUEST_TEMPLATE/pmc8_driver_change.md @ExploreScientific
+/explorescientific/ @ExploreScientific
 
-/drivers/telescope/pmc8.cpp @ExploreScientific/pmc-eight-indi-maintainers
-/drivers/telescope/pmc8.h @ExploreScientific/pmc-eight-indi-maintainers
-/drivers/telescope/pmc8driver.cpp @ExploreScientific/pmc-eight-indi-maintainers
-/drivers/telescope/pmc8driver.h @ExploreScientific/pmc-eight-indi-maintainers
+/drivers/telescope/pmc8.cpp @ExploreScientific
+/drivers/telescope/pmc8.h @ExploreScientific
+/drivers/telescope/pmc8driver.cpp @ExploreScientific
+/drivers/telescope/pmc8driver.h @ExploreScientific

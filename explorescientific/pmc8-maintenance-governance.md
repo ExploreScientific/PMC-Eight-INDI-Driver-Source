@@ -18,7 +18,7 @@ Explore Scientific-owned PMC-Eight driver review applies to:
 ## Contribution Flow
 
 1. Contributors open an issue or pull request in this repository.
-2. GitHub requests review from `@ExploreScientific/pmc-eight-indi-maintainers`.
+2. GitHub requests review from `@ExploreScientific`.
 3. An Explore Scientific engineer reviews firmware compatibility, mount behavior, and INDI driver impact.
 4. Required review and branch protection must pass before merge into the Explore Scientific official staging branch.
 5. Explore Scientific submits or endorses the accepted change upstream to `indilib/indi`.
@@ -54,3 +54,11 @@ When a change is ready for upstream:
 3. Format code according to INDI style.
 4. Open a pull request to `indilib/indi`.
 5. Include the Explore Scientific test matrix and vendor-support note.
+
+## Maintainer Assignment
+
+This repository is currently owned by the `@ExploreScientific` GitHub user account. GitHub user accounts do not support teams, so CODEOWNERS routes PMC-Eight driver review to `@ExploreScientific`.
+
+If the repository is moved under a GitHub organization later, replace `@ExploreScientific` in `.github/CODEOWNERS` with an engineering team, for example:
+
+`@ExploreScientific/pmc-eight-indi-maintainers`
