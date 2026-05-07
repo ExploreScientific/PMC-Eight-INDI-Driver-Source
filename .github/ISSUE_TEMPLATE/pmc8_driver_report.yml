@@ -1,0 +1,73 @@
+name: PMC-Eight INDI driver report
+description: Report a PMC-Eight INDI driver issue or compatibility request.
+title: "PMC-Eight INDI: "
+labels: ["pmc8", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for Explore Scientific PMC-Eight INDI driver issues.
+        Please include enough detail for an engineer to reproduce the behavior.
+  - type: input
+    id: mount
+    attributes:
+      label: Mount model
+      description: Example: iEXOS100, EXOS2, G11, iEXOS200, iEXOS300, Titan, ASKO.
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: PMC-Eight firmware version
+      description: Example: 20A02.1.8.3.bt.
+    validations:
+      required: true
+  - type: input
+    id: indi-version
+    attributes:
+      label: INDI version or commit
+      description: Include package version, nightly build date, or git commit.
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection method
+      options:
+        - Serial
+        - WiFi TCP
+        - WiFi UDP
+        - BLE
+        - Bluetooth Classic
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Client software
+      description: Example: KStars/Ekos version, INDI Control Panel, custom client.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or protocol trace
+      description: Paste relevant INDI debug logs, PMC-Eight command traces, or screenshots.
+      render: text
+    validations:
+      required: false
