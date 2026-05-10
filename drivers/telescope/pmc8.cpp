@@ -36,6 +36,8 @@
 
 #include <libnova/sidereal_time.h>
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 
 #include <math.h>
@@ -43,6 +45,8 @@
 
 /* Simulation Parameters */
 #define SLEWRATE 3          /* slew rate, degrees/s */
+#define PMC8_AXIS_POSITION_WRAP 16777216
+#define PMC8_AXIS_POSITION_SIGN 8388608
 
 #define MOUNTINFO_TAB "Mount Info"
 
@@ -51,8 +55,23 @@
 #define PMC8_TRACKING_AUTODETECT_INTERVAL 10
 #define PMC8_VERSION_MAJOR 0
 #define PMC8_VERSION_MINOR 5
+#define PMC8_ASCOM_CORRECTION_THRESHOLD_COUNTS 10
+#define PMC8_ASCOM_CORRECTION_SETTLE_POLLS 2
+#define PMC8_PARK_POSITION_TOLERANCE_COUNTS 250
+#define PMC8_HOME_POSITION_TOLERANCE_COUNTS 100
 
 static std::unique_ptr<PMC8> scope(new PMC8());
+
+static double motorCountsToAxisPark(int motorCounts)
+{
+    return motorCounts < 0 ? PMC8_AXIS_POSITION_WRAP + motorCounts : motorCounts;
+}
+
+static int axisParkToMotorCounts(double axisPosition)
+{
+    const int position = static_cast<int>(round(axisPosition));
+    return position > PMC8_AXIS_POSITION_SIGN ? 0 - (PMC8_AXIS_POSITION_WRAP - position) : position;
+}
 
 /* Constructor */
 PMC8::PMC8() : GI(this)
@@ -67,7 +86,7 @@ PMC8::PMC8() : GI(this)
 
     SetTelescopeCapability(TELESCOPE_CAN_PARK | TELESCOPE_CAN_SYNC | TELESCOPE_CAN_GOTO | TELESCOPE_CAN_ABORT |
                            TELESCOPE_HAS_TRACK_MODE | TELESCOPE_CAN_CONTROL_TRACK | TELESCOPE_HAS_TRACK_RATE |
-                           TELESCOPE_HAS_LOCATION,
+                           TELESCOPE_HAS_LOCATION | TELESCOPE_CAN_HOME_FIND | TELESCOPE_CAN_HOME_GO,
                            9);
 
     setVersion(PMC8_VERSION_MAJOR, PMC8_VERSION_MINOR);
@@ -96,9 +115,14 @@ bool PMC8::initProperties()
 
     // Mount Type
     IUFillSwitch(&MountTypeS[MOUNT_G11], "MOUNT_G11", "G11", ISS_OFF);
+    IUFillSwitch(&MountTypeS[MOUNT_TITAN], "MOUNT_TITAN", "Titan", ISS_OFF);
     IUFillSwitch(&MountTypeS[MOUNT_EXOS2], "MOUNT_EXOS2", "EXOS2", ISS_OFF);
     IUFillSwitch(&MountTypeS[MOUNT_iEXOS100], "MOUNT_iEXOS100", "iEXOS100", ISS_OFF);
-    IUFillSwitchVector(&MountTypeSP, MountTypeS, 3, getDeviceName(), "MOUNT_TYPE", "Mount Type", CONNECTION_TAB, IP_RW,
+    IUFillSwitch(&MountTypeS[MOUNT_iEXOS200], "MOUNT_iEXOS200", "iEXOS200", ISS_OFF);
+    IUFillSwitch(&MountTypeS[MOUNT_iEXOS300], "MOUNT_iEXOS300", "iEXOS300", ISS_OFF);
+    IUFillSwitch(&MountTypeS[MOUNT_MSROEQ], "MOUNT_MSROEQ", "MSROEQ", ISS_OFF);
+    IUFillSwitch(&MountTypeS[MOUNT_ASKO], "MOUNT_ASKO", "ASKO SX260S", ISS_OFF);
+    IUFillSwitchVector(&MountTypeSP, MountTypeS, MOUNT_COUNT, getDeviceName(), "MOUNT_TYPE", "Mount Type", CONNECTION_TAB, IP_RW,
                        ISR_1OFMANY, 0, IPS_IDLE);
 
 
@@ -123,6 +147,11 @@ bool PMC8::initProperties()
     IUFillSwitchVector(&PostGotoSP, PostGotoS, 3, getDeviceName(), "POST_GOTO_SETTINGS", "Post Goto", MOTION_TAB, IP_RW,
                        ISR_1OFMANY, 0, IPS_IDLE);
 
+    IUFillSwitch(&SlewCompensationS[0], "ASCOM_SLEW_COMPENSATION_ON", "On", ISS_ON);
+    IUFillSwitch(&SlewCompensationS[1], "ASCOM_SLEW_COMPENSATION_OFF", "Off", ISS_OFF);
+    IUFillSwitchVector(&SlewCompensationSP, SlewCompensationS, 2, getDeviceName(), "ASCOM_SLEW_COMPENSATION",
+                       "ASCOM Slew Compensation", MOTION_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
+
     // relabel move speeds
     SlewRateSP[0].setLabel("4x");
     SlewRateSP[1].setLabel("8x");
@@ -132,7 +161,7 @@ bool PMC8::initProperties()
     SlewRateSP[5].setLabel("128x");
     SlewRateSP[6].setLabel("256x");
     SlewRateSP[7].setLabel("512x");
-    SlewRateSP[8].setLabel("833x");
+    SlewRateSP[8].setLabel("Max");
 
     // settings for ramping up/down when moving
     IUFillNumber(&RampN[0], "RAMP_INTERVAL", "Interval (ms)", "%g", 20, 1000, 5, 200);
@@ -152,8 +181,9 @@ bool PMC8::initProperties()
 
     TrackState = SCOPE_IDLE;
 
-    // Driver does not support custom parking yet.
-    SetParkDataType(PARK_NONE);
+    // Park is stored as PMC-Eight motor/encoder counts. Home remains fixed at
+    // motor position (0,0), while Park may be adjusted for observatory clearance.
+    SetParkDataType(PARK_RA_DEC_ENCODER);
 
     addAuxControls();
 
@@ -178,6 +208,10 @@ bool PMC8::updateProperties()
         defineProperty(&PostGotoSP);
         loadConfig(true, PostGotoSP.name);
 
+        defineProperty(&SlewCompensationSP);
+        loadConfig(true, SlewCompensationSP.name);
+        set_pmc8_ascom_slew_compensation(IUFindOnSwitchIndex(&SlewCompensationSP) == 0);
+
         defineProperty(&RampNP);
         loadConfig(true, RampNP.name);
 
@@ -199,6 +233,7 @@ bool PMC8::updateProperties()
     else
     {
         deleteProperty(PostGotoSP.name);
+        deleteProperty(SlewCompensationSP.name);
 
         if (firmwareInfo.IsRev2Compliant)
         {
@@ -232,20 +267,10 @@ void PMC8::getStartupData()
 
         // not sure if there's really a point to the mount switch anymore if we know the mount from the firmware - perhaps remove as newer firmware becomes standard?
         // populate mount type switch in interface from firmware if possible
-        if (firmwareInfo.MountType == MOUNT_EXOS2)
+        if (firmwareInfo.MountType >= 0 && firmwareInfo.MountType < MOUNT_COUNT)
         {
-            MountTypeS[MOUNT_EXOS2].s = ISS_ON;
-            LOG_INFO("Detected mount type as Exos2.");
-        }
-        else if (firmwareInfo.MountType == MOUNT_G11)
-        {
-            MountTypeS[MOUNT_G11].s = ISS_ON;
-            LOG_INFO("Detected mount type as G11.");
-        }
-        else if (firmwareInfo.MountType == MOUNT_iEXOS100)
-        {
-            MountTypeS[MOUNT_iEXOS100].s = ISS_ON;
-            LOG_INFO("Detected mount type as iExos100.");
+            MountTypeS[firmwareInfo.MountType].s = ISS_ON;
+            LOGF_INFO("Detected mount type as %s.", MountTypeS[firmwareInfo.MountType].label);
         }
         else
         {
@@ -308,29 +333,20 @@ void PMC8::getStartupData()
     LOG_INFO("The PMC-Eight driver is in BETA development currently.");
     LOG_INFO("Be prepared to intervene if something unexpected occurs.");
 
-#if 0
-    // Park position initialization
-    // Southern Hemisphere support: Use get_pmc8_east_dir() to determine proper DEC park position
-    // In northern hemisphere, park at DEC +90; in southern hemisphere, park at DEC -90
-    double HA  = ln_get_apparent_sidereal_time(ln_get_julian_from_sys());
-    double DEC = get_pmc8_east_dir() ? 90.0 : -90.0;  // +90 for north, -90 for south
-
-    // currently only park at motor position (0, 0)
     if (InitPark())
     {
         // If loading parking data is successful, we just set the default parking values.
-        SetAxis1ParkDefault(HA);
-        SetAxis2ParkDefault(DEC);
+        SetAxis1ParkDefault(0);
+        SetAxis2ParkDefault(0);
     }
     else
     {
         // Otherwise, we set all parking data to default in case no parking data is found.
-        SetAxis1Park(HA);
-        SetAxis2Park(DEC);
-        SetAxis1ParkDefault(HA);
-        SetAxis2ParkDefault(DEC);
+        SetAxis1Park(0);
+        SetAxis2Park(0);
+        SetAxis1ParkDefault(0);
+        SetAxis2ParkDefault(0);
     }
-#endif
 
 #if 0
     // FIXME - Need to implement simulation functionality
@@ -443,6 +459,14 @@ bool PMC8::ISNewSwitch(const char *dev, const char *name, ISState *states, char 
             IDSetSwitch(&PostGotoSP, nullptr);
             return true;
         }
+        if (strcmp(name, SlewCompensationSP.name) == 0)
+        {
+            IUUpdateSwitch(&SlewCompensationSP, states, names, n);
+            set_pmc8_ascom_slew_compensation(IUFindOnSwitchIndex(&SlewCompensationSP) == 0);
+            SlewCompensationSP.s = IPS_OK;
+            IDSetSwitch(&SlewCompensationSP, nullptr);
+            return true;
+        }
     }
 
     return INDI::Telescope::ISNewSwitch(dev, name, states, names, n);
@@ -485,6 +509,97 @@ bool PMC8::ReadScopeStatus()
             {
                 if (slewing == false)
                 {
+                    if (HomeSP.getState() == IPS_BUSY)
+                    {
+                        int actualRA = 0;
+                        int actualDEC = 0;
+                        bool atHomePosition = false;
+
+                        rc = get_pmc8_is_at_motor_position(PortFD, 0, 0, PMC8_HOME_POSITION_TOLERANCE_COUNTS,
+                                                           actualRA, actualDEC, atHomePosition);
+                        if (!rc)
+                        {
+                            HomeSP.reset();
+                            HomeSP.setState(IPS_ALERT);
+                            HomeSP.apply();
+                            LOG_ERROR("Unable to verify home position after home slew stopped.");
+                            break;
+                        }
+
+                        HomeSP.reset();
+                        if (atHomePosition)
+                        {
+                            if (stop_pmc8_tracking_motion(PortFD))
+                                LOG_DEBUG("Mount tracking is off.");
+
+                            TrackState = SCOPE_IDLE;
+                            EqNP.setState(IPS_IDLE);
+                            HomeSP.setState(IPS_OK);
+                            LOGF_INFO("Home position reached at motor position RA=%d DEC=%d.", actualRA, actualDEC);
+                        }
+                        else
+                        {
+                            HomeSP.setState(IPS_ALERT);
+                            LOGF_WARN("Home motion stopped before reaching home target: RA=%d DEC=%d. Mount is not home.",
+                                      actualRA, actualDEC);
+
+                            if (SetTrackEnabled(true))
+                                TrackState = SCOPE_TRACKING;
+                            else
+                                TrackState = SCOPE_IDLE;
+                        }
+
+                        HomeSP.apply();
+                        break;
+                    }
+
+                    if (ascomCorrectionSettlePolls > 0)
+                    {
+                        ascomCorrectionSettlePolls--;
+                        LOG_DEBUG("Waiting for ASCOM correction slew motion to settle before completing goto.");
+                        break;
+                    }
+
+                    if (ascomCorrectionPending)
+                    {
+                        int raError = 0, decError = 0;
+                        int raActual = 0, decActual = 0;
+                        int raTarget = 0, decTarget = 0;
+                        ascomCorrectionPending = false;
+
+                        rc = get_pmc8_slew_target_error(PortFD, targetRA, targetDEC, raError, decError,
+                                                        raActual, decActual, raTarget, decTarget);
+                        if (!rc)
+                        {
+                            LOG_ERROR("Unable to evaluate ASCOM correction slew error.");
+                            break;
+                        }
+
+                        LOGF_DEBUG("ASCOM correction check: RA actual=%d target=%d error=%d, DEC actual=%d target=%d error=%d",
+                                   raActual, raTarget, raError, decActual, decTarget, decError);
+
+                        if ((raError > PMC8_ASCOM_CORRECTION_THRESHOLD_COUNTS) ||
+                                (decError > PMC8_ASCOM_CORRECTION_THRESHOLD_COUNTS))
+                        {
+                            const int postGotoMode = IUFindOnSwitchIndex(&PostGotoSP);
+                            const bool compensateRASlew = (postGotoMode == 0) ||
+                                                          ((postGotoMode == 1) && (RememberTrackState == SCOPE_TRACKING));
+
+                            LOGF_INFO("ASCOM correction slew needed: RA error=%d counts, DEC error=%d counts.", raError, decError);
+                            if (!slew_pmc8(PortFD, targetRA, targetDEC, compensateRASlew))
+                            {
+                                LOG_ERROR("ASCOM correction slew failed.");
+                                break;
+                            }
+
+                            ascomCorrectionSettlePolls = PMC8_ASCOM_CORRECTION_SETTLE_POLLS;
+                            LOG_INFO("ASCOM correction slew started.");
+                            break;
+                        }
+
+                        LOGF_DEBUG("ASCOM correction slew not needed: RA error=%d counts, DEC error=%d counts.", raError, decError);
+                    }
+
                     if ((IUFindOnSwitchIndex(&PostGotoSP) == 0) ||
                             ((IUFindOnSwitchIndex(&PostGotoSP) == 1) && (RememberTrackState == SCOPE_TRACKING)))
                     {
@@ -525,12 +640,38 @@ bool PMC8::ReadScopeStatus()
             {
                 if (slewing == false)
                 {
-                    if (stop_pmc8_tracking_motion(PortFD))
-                        LOG_DEBUG("Mount tracking is off.");
+                    int actualRA = 0;
+                    int actualDEC = 0;
+                    bool atParkPosition = false;
 
-                    SetParked(true);
+                    rc = get_pmc8_is_at_motor_position(PortFD, parkTargetRA, parkTargetDEC, PMC8_PARK_POSITION_TOLERANCE_COUNTS,
+                                                       actualRA, actualDEC, atParkPosition);
+                    if (!rc)
+                    {
+                        LOG_ERROR("Unable to verify park position after park slew stopped.");
+                        break;
+                    }
 
-                    saveConfig(true);
+                    if (atParkPosition)
+                    {
+                        if (stop_pmc8_tracking_motion(PortFD))
+                            LOG_DEBUG("Mount tracking is off.");
+
+                        SetParked(true);
+                        saveConfig(true);
+                        LOGF_INFO("Mount parked at motor position RA=%d DEC=%d.", actualRA, actualDEC);
+                    }
+                    else
+                    {
+                        LOGF_WARN("Park motion stopped before reaching park target: RA=%d DEC=%d. Mount is not parked.",
+                                  actualRA, actualDEC);
+                        SetParked(false);
+
+                        if (SetTrackEnabled(true))
+                            TrackState = SCOPE_TRACKING;
+                        else
+                            TrackState = SCOPE_IDLE;
+                    }
                 }
             }
             break;
@@ -642,6 +783,8 @@ bool PMC8::Goto(double r, double d)
     {
         targetRA  = r;
         targetDEC = d;
+        ascomCorrectionPending = false;
+        ascomCorrectionSettlePolls = 0;
         abort_pmc8_goto(PortFD);
         //Supposedly the goto should abort in 2s, but we'll give it a little bit more time just in case
         IEAddTimer(2500, AbortGotoTimeoutHelper, this);
@@ -670,12 +813,16 @@ bool PMC8::Goto(double r, double d)
 
     LOGF_DEBUG("Slewing to RA: %s - DEC: %s", RAStr, DecStr);
 
-    if (slew_pmc8(PortFD, r, d) == false)
+    const int postGotoMode = IUFindOnSwitchIndex(&PostGotoSP);
+    const bool compensateRASlew = (postGotoMode == 0) || ((postGotoMode == 1) && (TrackState == SCOPE_TRACKING));
+    if (slew_pmc8(PortFD, r, d, compensateRASlew) == false)
     {
         LOG_ERROR("Failed to slew.");
         return false;
     }
 
+    ascomCorrectionPending = (IUFindOnSwitchIndex(&SlewCompensationSP) == 0) && compensateRASlew;
+    ascomCorrectionSettlePolls = 0;
     TrackState = SCOPE_SLEWING;
 
     return true;
@@ -748,6 +895,8 @@ bool PMC8::Abort()
     //GOTO Abort slew operations.
     if (TrackState == SCOPE_SLEWING)
     {
+        ascomCorrectionPending = false;
+        ascomCorrectionSettlePolls = 0;
         abort_pmc8_goto(PortFD);
         //It will take about 2s to abort; we'll rely on ReadScopeStatus to detect when that occurs
         LOG_INFO("Goto aborted.");
@@ -780,27 +929,19 @@ bool PMC8::Abort()
 
 bool PMC8::Park()
 {
-#if 0
-    // FIXME - Currently only support parking at motor position (0, 0)
-    targetRA  = GetAxis1Park();
-    targetDEC = GetAxis2Park();
-    if (set_pmc8_radec(PortFD, r, d) == false)
-    {
-        LOG_ERROR("Error setting RA/DEC.");
-        return false;
-    }
-#endif
-
     //if we're already parking, no need to do anything
     if (TrackState == SCOPE_PARKING)
     {
         return true;
     }
 
-    if (park_pmc8(PortFD))
+    parkTargetRA = axisParkToMotorCounts(GetAxis1Park());
+    parkTargetDEC = axisParkToMotorCounts(GetAxis2Park());
+
+    if (park_pmc8(PortFD, parkTargetRA, parkTargetDEC))
     {
         TrackState = SCOPE_PARKING;
-        LOG_INFO("Telescope parking in progress to motor position (0, 0)");
+        LOGF_INFO("Telescope parking in progress to motor position RA=%d DEC=%d.", parkTargetRA, parkTargetDEC);
         return true;
     }
     else
@@ -820,6 +961,63 @@ bool PMC8::UnPark()
     else
     {
         return false;
+    }
+}
+
+IPState PMC8::ExecuteHomeAction(TelescopeHomeAction action)
+{
+    switch (action)
+    {
+        case HOME_FIND:
+        case HOME_GO:
+        {
+            if (TrackState == SCOPE_SLEWING || TrackState == SCOPE_PARKING)
+            {
+                LOG_WARN("Cannot home while the mount is already moving.");
+                return IPS_ALERT;
+            }
+
+            int actualRA = 0;
+            int actualDEC = 0;
+            bool atHomePosition = false;
+
+            if (get_pmc8_is_at_motor_position(PortFD, 0, 0, PMC8_HOME_POSITION_TOLERANCE_COUNTS,
+                                              actualRA, actualDEC, atHomePosition) && atHomePosition)
+            {
+                if (stop_pmc8_tracking_motion(PortFD))
+                    LOG_DEBUG("Mount tracking is off.");
+
+                TrackState = SCOPE_IDLE;
+                LOGF_INFO("Mount is already home at motor position RA=%d DEC=%d.", actualRA, actualDEC);
+                return IPS_OK;
+            }
+
+            ascomCorrectionPending = false;
+            ascomCorrectionSettlePolls = 0;
+
+            if (!SetTrackEnabled(false))
+            {
+                LOG_ERROR("Unable to stop tracking before homing.");
+                return IPS_ALERT;
+            }
+
+            if (!home_pmc8(PortFD))
+            {
+                LOG_ERROR("Unable to start home slew.");
+                return IPS_ALERT;
+            }
+
+            TrackState = SCOPE_SLEWING;
+            LOG_INFO("Slewing to PMC-Eight home motor position (0, 0).");
+            return IPS_BUSY;
+        }
+
+        case HOME_SET:
+            LOG_WARN("Set Home is not exposed for PMC-Eight because it would re-zero the motor counters.");
+            return IPS_ALERT;
+
+        default:
+            return IPS_ALERT;
     }
 }
 
@@ -896,11 +1094,20 @@ void PMC8::simulationTriggered(bool enable)
     set_pmc8_simulation(enable);
 }
 
-int PMC8::getSlewRate()
+int PMC8::getSlewRate(PMC8_AXIS axis)
 {
     int mode = SlewRateSP.findOnSwitchIndex();
-    if (mode >= 8) return PMC8_MAX_MOVE_RATE;
-    return 4 * pow(2, mode) * 15;
+    int maxAxisRate = static_cast<int>(std::lround(get_pmc8_axis_max_move_rate(axis)));
+
+    if (mode >= 8)
+        return maxAxisRate;
+
+    int requestedRate = static_cast<int>(std::lround(4.0 * std::pow(2.0, mode) * 15.0));
+
+    if (maxAxisRate <= 0)
+        return requestedRate;
+
+    return std::min(requestedRate, maxAxisRate);
 }
 
 
@@ -1030,7 +1237,7 @@ bool PMC8::MoveNS(INDI_DIR_NS dir, TelescopeMotionCommand command)
     {
         case MOTION_START:
             moveInfoDEC.rampDir = PMC8_RAMP_UP;
-            moveInfoDEC.targetRate = getSlewRate();
+            moveInfoDEC.targetRate = getSlewRate(PMC8_AXIS_DEC);
             // if we're still ramping down, we can bypass resetting the state and adding a timer
             // but we do need to make sure it's the same direction first (if not, kill our previous timer)
             if (moveInfoDEC.state == PMC8_MOVE_RAMPING)
@@ -1101,7 +1308,7 @@ bool PMC8::MoveWE(INDI_DIR_WE dir, TelescopeMotionCommand command)
     {
         case MOTION_START:
             moveInfoRA.rampDir = PMC8_RAMP_UP;
-            moveInfoRA.targetRate = getSlewRate();
+            moveInfoRA.targetRate = getSlewRate(PMC8_AXIS_RA);
             // if we're still ramping down, we can bypass resetting the state and adding a timer
             // but we do need to make sure it's the same direction first (if not, kill our previous timer)
             if (moveInfoRA.state == PMC8_MOVE_RAMPING)
@@ -1169,7 +1376,7 @@ IPState PMC8::GuideNorth(uint32_t ms)
         }
 
         isPulsingNS = true;
-        start_pmc8_guide(PortFD, PMC8_N, (int)ms, timetaken_us, 0);
+        start_pmc8_guide(PortFD, PMC8_N, (int)ms, timetaken_us, 0, destSideOfPier(currentRA, currentDEC));
 
         timeremain_ms = (int)(ms - ((float)timetaken_us) / 1000.0);
 
@@ -1210,7 +1417,7 @@ IPState PMC8::GuideSouth(uint32_t ms)
         }
 
         isPulsingNS = true;
-        start_pmc8_guide(PortFD, PMC8_S, (int)ms, timetaken_us, 0);
+        start_pmc8_guide(PortFD, PMC8_S, (int)ms, timetaken_us, 0, destSideOfPier(currentRA, currentDEC));
 
         timeremain_ms = (int)(ms - ((float)timetaken_us) / 1000.0);
 
@@ -1252,7 +1459,8 @@ IPState PMC8::GuideEast(uint32_t ms)
 
         isPulsingWE = true;
 
-        start_pmc8_guide(PortFD, PMC8_E, (int)ms, timetaken_us, TrackRateNP[AXIS_RA].getValue() / SOLAR_SECOND);
+        start_pmc8_guide(PortFD, PMC8_E, (int)ms, timetaken_us, TrackRateNP[AXIS_RA].getValue() / SOLAR_SECOND,
+                         destSideOfPier(currentRA, currentDEC));
 
         timeremain_ms = (int)(ms - ((float)timetaken_us) / 1000.0);
 
@@ -1293,7 +1501,8 @@ IPState PMC8::GuideWest(uint32_t ms)
         }
 
         isPulsingWE = true;
-        start_pmc8_guide(PortFD, PMC8_W, (int)ms, timetaken_us, TrackRateNP[AXIS_RA].getValue() / SOLAR_SECOND);
+        start_pmc8_guide(PortFD, PMC8_W, (int)ms, timetaken_us, TrackRateNP[AXIS_RA].getValue() / SOLAR_SECOND,
+                         destSideOfPier(currentRA, currentDEC));
 
         timeremain_ms = (int)(ms - ((float)timetaken_us) / 1000.0);
 
@@ -1375,6 +1584,7 @@ bool PMC8::saveConfigItems(FILE *fp)
     IUSaveConfigNumber(fp, &RampNP);
     IUSaveConfigNumber(fp, &LegacyGuideRateNP);
     IUSaveConfigSwitch(fp, &PostGotoSP);
+    IUSaveConfigSwitch(fp, &SlewCompensationSP);
 
     return true;
 }
@@ -1475,26 +1685,42 @@ void PMC8::mountSim()
     set_pmc8_sim_dec(currentDEC);
 }
 
-// PMC8 parks to motor position (0, 0) which corresponds to HA=6h, DEC=+/-90
-// Southern Hemisphere support: Use get_pmc8_east_dir() to determine proper DEC park position
+bool PMC8::SetParkPosition(double Axis1Value, double Axis2Value)
+{
+    if (Axis1Value < 0 || Axis1Value >= PMC8_AXIS_POSITION_WRAP ||
+            Axis2Value < 0 || Axis2Value >= PMC8_AXIS_POSITION_WRAP)
+    {
+        LOG_WARN("Park encoder positions must be between 0 and 16777215.");
+        return false;
+    }
+
+    return true;
+}
+
 bool PMC8::SetCurrentPark()
 {
-    SetAxis1Park(currentRA);
-    SetAxis2Park(currentDEC);
+    int rapoint = 0;
+    int decpoint = 0;
+
+    if (!get_pmc8_position(PortFD, rapoint, decpoint))
+    {
+        LOG_ERROR("Unable to read current motor position for Set Current Park.");
+        return false;
+    }
+
+    SetAxis1Park(motorCountsToAxisPark(rapoint));
+    SetAxis2Park(motorCountsToAxisPark(decpoint));
+    LOGF_INFO("Current park position set to motor position RA=%d DEC=%d.", rapoint, decpoint);
 
     return true;
 }
 
 bool PMC8::SetDefaultPark()
 {
-    // By default set RA to HA (Hour Angle)
-    SetAxis1Park(ln_get_apparent_sidereal_time(ln_get_julian_from_sys()));
-
-    // Set DEC to 90 or -90 depending on the hemisphere
-    // get_pmc8_east_dir() returns 1 for northern hemisphere, 0 for southern
-    // In northern hemisphere, park pointing at north celestial pole (DEC +90)
-    // In southern hemisphere, park pointing at south celestial pole (DEC -90)
-    SetAxis2Park(get_pmc8_east_dir() ? 90.0 : -90.0);
+    // Default Park matches fixed Home at PMC-Eight motor position (0,0), but
+    // users may set Park independently for roll-off-roof or clearance needs.
+    SetAxis1Park(0);
+    SetAxis2Park(0);
 
     return true;
 }
@@ -1554,14 +1780,17 @@ bool PMC8::SetTrackMode(uint8_t mode)
 
     if (pmc8_mode == PMC8_TRACK_CUSTOM)
     {
-        if (set_pmc8_ra_tracking(PortFD, TrackRateNP[AXIS_RA].getValue() / SOLAR_SECOND))
+        if (set_pmc8_ra_tracking(PortFD, TrackRateNP[AXIS_RA].getValue() / SOLAR_SECOND) &&
+                set_pmc8_custom_dec_track_rate(PortFD, TrackRateNP[AXIS_DE].getValue() / SOLAR_SECOND,
+                                               destSideOfPier(currentRA, currentDEC)))
         {
             return true;
         }
     }
     else
     {
-        if (set_pmc8_track_mode(PortFD, pmc8_mode))
+        if (set_pmc8_track_mode(PortFD, pmc8_mode) &&
+                set_pmc8_custom_dec_track_rate(PortFD, 0.0, destSideOfPier(currentRA, currentDEC)))
             return true;
     }
 
@@ -1570,25 +1799,19 @@ bool PMC8::SetTrackMode(uint8_t mode)
 
 bool PMC8::SetTrackRate(double raRate, double deRate)
 {
-    static bool deRateWarning = true;
     double pmc8RARate;
+    double pmc8DERate;
 
     LOGF_INFO("Custom tracking rate set: raRate=%f  deRate=%f", raRate, deRate);
 
-    // for now just send rate
     pmc8RARate = raRate / SOLAR_SECOND;
+    pmc8DERate = deRate / SOLAR_SECOND;
 
-    if (deRate != 0 && deRateWarning)
-    {
-        // Only send warning once per session
-        deRateWarning = false;
-        LOG_WARN("Custom Declination tracking rate is not implemented yet.");
-    }
-
-    if (set_pmc8_ra_tracking(PortFD, pmc8RARate))
+    if (set_pmc8_ra_tracking(PortFD, pmc8RARate) &&
+            set_pmc8_custom_dec_track_rate(PortFD, pmc8DERate, destSideOfPier(currentRA, currentDEC)))
         return true;
 
-    LOG_ERROR("PMC8::SetTrackRate not implemented!");
+    LOG_ERROR("PMC8::SetTrackRate failed");
     return false;
 }
 
@@ -1617,13 +1840,12 @@ bool PMC8::SetTrackEnabled(bool enabled)
             return false;
         }
 
-        // currently only support tracking rate in RA
-        //        rc=set_pmc8_custom_dec_track_rate(PortFD, 0);
-        //        if (!rc)
-        //        {
-        //            LOG_ERROR("PMC8::SetTrackREnabled - unable to set DEC track rate to 0");
-        //            return false;
-        //        }
+        rc = set_pmc8_custom_dec_track_rate(PortFD, 0, destSideOfPier(currentRA, currentDEC));
+        if (!rc)
+        {
+            LOG_ERROR("PMC8::SetTrackEnabled - unable to set DEC track rate to 0");
+            return false;
+        }
     }
 
     return true;

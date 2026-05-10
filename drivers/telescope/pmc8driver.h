@@ -36,7 +36,8 @@
 // and start moving east at the min move rate (4x sidereal)
 #define PMC8_MAX_TRACK_RATE 44
 
-// set max settable slew rate as 833x sidereal
+// Legacy fallback max move rate in arcsec/sec. Runtime max rates are derived from
+// the selected mount's ASCOM max motor speed and RA/DEC motor counts.
 #define PMC8_MAX_MOVE_RATE (833*15)
 
 // JM 2024.12.03: Since INDI tracking rate is defined as arcsecs per second (SOLAR second), we need to convert from solar to sidereal
@@ -62,7 +63,18 @@ typedef enum { PMC8_TRACK_SIDEREAL, PMC8_TRACK_LUNAR, PMC8_TRACK_SOLAR, PMC8_TRA
 typedef enum { PMC8_AXIS_RA = 0, PMC8_AXIS_DEC = 1 } PMC8_AXIS;
 typedef enum { PMC8_N, PMC8_S, PMC8_W, PMC8_E } PMC8_DIRECTION;
 
-typedef enum { MOUNT_G11 = 0, MOUNT_EXOS2 = 1, MOUNT_iEXOS100 = 2 } PMC8_MOUNT_TYPES;
+typedef enum
+{
+    MOUNT_G11 = 0,
+    MOUNT_TITAN,
+    MOUNT_EXOS2,
+    MOUNT_iEXOS100,
+    MOUNT_iEXOS200,
+    MOUNT_iEXOS300,
+    MOUNT_MSROEQ,
+    MOUNT_ASKO,
+    MOUNT_COUNT
+} PMC8_MOUNT_TYPES;
 
 typedef enum { PMC8_SERIAL_AUTO, PMC8_SERIAL_INVERTED, PMC8_SERIAL_STANDARD, PMC8_ETHERNET } PMC8_CONNECTION_TYPE;
 
@@ -89,6 +101,7 @@ void set_pmc8_debug(bool enable);
 void set_pmc8_simulation(bool enable);
 void set_pmc8_device(const char *name);
 void set_pmc8_mountParameters(int index);
+void set_pmc8_ascom_slew_compensation(bool enable);
 bool get_pmc8_response(int fd, char* buf, int* nbytes_read, const char* expected);
 bool send_pmc8_command(int fd, const char *buf, int nbytes, int *nbytes_written);
 
@@ -120,6 +133,7 @@ bool get_pmc8_status(int fd, PMC8Info *info);
 bool get_pmc8_firmware(int fd, FirmwareInfo *info);
 /** Get RA/DEC */
 bool get_pmc8_coords(int fd, double &ra, double &dec);
+bool get_pmc8_position(int fd, int &rapoint, int &decpoint);
 bool get_pmc8_move_rate_axis(int fd, PMC8_AXIS axis, double &rate);
 bool get_pmc8_track_rate(int fd, double &rate);
 bool get_pmc8_tracking_data(int fd, double &rate, uint8_t &mode);
@@ -129,20 +143,23 @@ uint8_t get_pmc8_tracking_mode_from_rate(double rate);
  Motion
 **************************************************************************/
 bool set_pmc8_move_rate_axis(int fd, PMC8_DIRECTION dir, int reqrate);
+double get_pmc8_axis_max_move_rate(PMC8_AXIS axis);
 bool stop_pmc8_motion(int fd, PMC8_DIRECTION dir);
 bool stop_pmc8_tracking_motion(int fd);
 bool set_pmc8_ra_tracking(int fd, double rate);
 bool set_pmc8_custom_ra_track_rate(int fd, double rate);
-bool set_pmc8_custom_dec_track_rate(int fd, double rate);
+bool set_pmc8_custom_dec_track_rate(int fd, double rate, INDI::Telescope::TelescopePierSide pierSide);
 bool set_pmc8_custom_ra_move_rate(int fd, double rate);
 bool set_pmc8_custom_dec_move_rate(int fd, double rate);
 bool set_pmc8_track_mode(int fd, uint8_t mode);
 bool get_pmc8_is_scope_slewing(int fd, bool &isslew);
+bool get_pmc8_slew_target_error(int fd, double ra, double dec, int &raError, int &decError,
+                                int &raActual, int &decActual, int &raTarget, int &decTarget);
 bool get_pmc8_direction_axis(int fd, PMC8_AXIS axis, int &dir);
 bool set_pmc8_direction_axis(int fd, PMC8_AXIS axis, int dir, bool fast);
 bool abort_pmc8(int fd);
 bool abort_pmc8_goto(int fd);
-bool slew_pmc8(int fd, double ra, double dec);
+bool slew_pmc8(int fd, double ra, double dec, bool compensate_ra);
 bool sync_pmc8(int fd, double ra, double dec);
 bool set_pmc8_radec(int fd, double ra, double dec);
 void set_pmc8_goto_resume(bool resume);
@@ -152,15 +169,19 @@ INDI::Telescope::TelescopePierSide destSideOfPier(double ra, double dec);
 /**************************************************************************
  Park
 **************************************************************************/
-bool park_pmc8(int fd);
+bool park_pmc8(int fd, int rapoint, int decpoint);
 bool unpark_pmc8(int fd);
+bool home_pmc8(int fd);
+bool get_pmc8_is_at_motor_position(int fd, int target_ra, int target_dec, int tolerance_counts,
+                                    int &actual_ra, int &actual_dec, bool &is_at_position);
 
 /**************************************************************************
  Guide
 **************************************************************************/
 bool set_pmc8_guide_rate(int fd, PMC8_AXIS axis, double rate);
 bool get_pmc8_guide_rate(int fd, PMC8_AXIS axis, double &rate);
-bool start_pmc8_guide(int fd, PMC8_DIRECTION gdir, int ms, long &timetaken_us, double ratehint);
+bool start_pmc8_guide(int fd, PMC8_DIRECTION gdir, int ms, long &timetaken_us, double ratehint,
+                      INDI::Telescope::TelescopePierSide pierSide);
 bool stop_pmc8_guide(int fd, PMC8_DIRECTION gdir);
 
 /**************************************************************************

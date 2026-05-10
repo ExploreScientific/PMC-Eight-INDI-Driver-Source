@@ -79,6 +79,7 @@ class PMC8 : public INDI::Telescope, public INDI::GuiderInterface
 
         virtual bool Park() override;
         virtual bool UnPark() override;
+        virtual IPState ExecuteHomeAction(TelescopeHomeAction action) override;
 
         virtual bool Sync(double ra, double dec) override;
         virtual bool Goto(double, double) override;
@@ -92,6 +93,7 @@ class PMC8 : public INDI::Telescope, public INDI::GuiderInterface
         virtual void simulationTriggered(bool enable) override;
 
         // Parking
+        virtual bool SetParkPosition(double Axis1Value, double Axis2Value) override;
         virtual bool SetCurrentPark() override;
         virtual bool SetDefaultPark() override;
 
@@ -134,7 +136,7 @@ class PMC8 : public INDI::Telescope, public INDI::GuiderInterface
         static void rampTimeoutHelperW(void *p);
         bool ramp_movement(PMC8_DIRECTION calldir);
 
-        int getSlewRate();
+        int getSlewRate(PMC8_AXIS axis);
 
     private:
         /**
@@ -150,7 +152,7 @@ class PMC8 : public INDI::Telescope, public INDI::GuiderInterface
         ITextVectorProperty FirmwareTP;
 
         /* Mount Types */
-        ISwitch MountTypeS[3];
+        ISwitch MountTypeS[MOUNT_COUNT];
         ISwitchVectorProperty MountTypeSP;
 
         /* SRF Guide Rates */
@@ -170,6 +172,14 @@ class PMC8 : public INDI::Telescope, public INDI::GuiderInterface
         // Post-Goto Behavior
         ISwitch PostGotoS[3];
         ISwitchVectorProperty PostGotoSP;
+
+        // ASCOM-compatible slew behavior
+        ISwitch SlewCompensationS[2];
+        ISwitchVectorProperty SlewCompensationSP;
+        bool ascomCorrectionPending = false;
+        int ascomCorrectionSettlePolls = 0;
+        int parkTargetRA = 0;
+        int parkTargetDEC = 0;
 
         unsigned int DBG_SCOPE;
         double currentRA, currentDEC;
