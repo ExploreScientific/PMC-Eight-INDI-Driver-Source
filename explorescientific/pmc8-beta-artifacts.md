@@ -4,6 +4,12 @@ This repository can produce beta binary artifacts for the Explore Scientific PMC
 
 The artifacts are release downloads. They are not committed to the repository.
 
+Formal beta release:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
+```
+
 Each artifact contains:
 
 - `bin/indi_pmc8_telescope`
@@ -20,6 +26,48 @@ Each artifact contains:
 - macOS Intel x86_64: `pmc8-indi-beta-<version>-macos-x86_64.zip`
 
 The macOS target is split into Apple Silicon and Intel artifacts because INDI and Homebrew dependencies are architecture-specific.
+
+## Download From The Formal Release
+
+Go to the release page and download the artifact that matches the target system:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
+```
+
+Linux PC/notebook:
+
+```bash
+tar -xzf pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64
+sudo ./install.sh
+```
+
+Raspberry Pi 64-bit Linux:
+
+```bash
+tar -xzf pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64
+sudo ./install.sh
+```
+
+macOS Apple Silicon:
+
+```bash
+unzip pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64
+sudo ./install.sh "$(brew --prefix)"
+```
+
+macOS Intel:
+
+```bash
+unzip pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64.zip
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64
+sudo ./install.sh "$(brew --prefix)"
+```
+
+Restart KStars/Ekos after installation.
 
 ## Create Artifacts With GitHub Actions
 
@@ -70,3 +118,10 @@ By default this installs:
 ```
 
 The installer backs up existing files in the same install directories before replacing them.
+
+Verify after installation:
+
+```bash
+which indi_pmc8_telescope
+which indiserver
+```

@@ -26,7 +26,13 @@ Branch:
 explorescientific/pmc8-maintenance
 ```
 
-Release artifacts will be published from that repository under GitHub Releases.
+Formal beta release:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
+```
+
+Download the beta artifacts from the **Assets** section of that GitHub Release.
 
 ## Available Beta Artifacts
 
@@ -45,7 +51,7 @@ Each beta artifact includes:
 - matching INDI shared libraries built from the same source tree
 - installation notes and release notes
 
-The planned beta artifacts are:
+The beta artifacts are:
 
 ```text
 Linux PC / notebook x86_64:
@@ -103,6 +109,12 @@ Download:
 pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz
 ```
 
+This file is available from the GitHub Release assets:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
+```
+
 Install:
 
 ```bash
@@ -141,6 +153,12 @@ Download:
 pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz
 ```
 
+This file is available from the GitHub Release assets:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
+```
+
 Install:
 
 ```bash
@@ -176,6 +194,12 @@ pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip
 
 Intel:
 pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64.zip
+```
+
+Both macOS files are available from the GitHub Release assets:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
 ```
 
 Install:

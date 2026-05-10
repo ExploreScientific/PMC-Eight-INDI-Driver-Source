@@ -2,10 +2,16 @@
 
 ## PMC8-INDI-2.2.1-es1
 
-Status: In development  
+Status: Beta release
 Base INDI version: 2.2.1  
-Date: 2026-05-09  
+Date: 2026-05-10
 Maintainer: Explore Scientific
+
+Formal beta release:
+
+```text
+https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1
+```
 
 ### Executive Summary
 
@@ -25,6 +31,26 @@ SkySafari-specific ASCOM variable-rate suppression was intentionally not ported 
 - Removed the Scotty mount selection from the Explore Scientific INDI driver.
 - Improved WiFi/Ethernet connection tolerance for PMC-Eight command responses.
 - Improved behavior when Park or Home motion stops before the expected motor target is reached.
+
+### Beta Binary Artifacts
+
+The beta release provides compiled server/driver artifacts for:
+
+- Linux PC/notebook x86_64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz`
+- Raspberry Pi 64-bit Linux arm64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz`
+- macOS Apple Silicon arm64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip`
+- macOS Intel x86_64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64.zip`
+
+Each artifact includes a matching beta stack built from this source tree:
+
+- `bin/indi_pmc8_telescope`
+- `bin/indiserver`
+- matching INDI shared libraries
+- `README-INSTALL.md`
+- `MANIFEST.txt`
+- this `pmc8-whats-new.md` release note
+
+These artifacts are not complete KStars distributions. They are intended for beta testers who already have a working INDI/KStars/Ekos environment and are comfortable replacing/restoring INDI server/driver binaries.
 
 ### Goto And Slew Accuracy
 
@@ -138,6 +164,11 @@ SkySafari-specific ASCOM variable-rate suppression was intentionally not ported 
 
 - Focused WSL build passed for the PMC-Eight driver target:
   - `indi_pmc8_telescope`
+- GitHub Actions beta artifact workflow passed for:
+  - Linux PC/notebook x86_64
+  - Raspberry Pi Linux arm64
+  - macOS Apple Silicon arm64
+  - macOS Intel x86_64
 - Python conversion fixture passed:
   - P9 mapping checks
   - destination-side checks
