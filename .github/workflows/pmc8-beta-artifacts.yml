@@ -1,6 +1,13 @@
 name: PMC-Eight Beta Artifacts
 
 on:
+  push:
+    branches:
+      - explorescientific/pmc8-maintenance
+    paths:
+      - ".github/workflows/pmc8-beta-artifacts.yml"
+      - "drivers/telescope/pmc8.*"
+      - "explorescientific/**"
   workflow_dispatch:
     inputs:
       release_label:
