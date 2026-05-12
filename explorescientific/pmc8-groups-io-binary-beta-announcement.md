@@ -44,13 +44,13 @@ indi_pmc8_telescope
 
 This executable is used by `indiserver` when KStars/Ekos starts the Explore Scientific PMC-Eight telescope driver.
 
-Linux beta artifacts are now provided as INDI-style Debian packages instead of loose executable tarballs. This follows the same packaging model used by the INDI project and avoids shared-library version failures between Ubuntu releases.
+Linux beta artifacts are now provided as INDI-style Debian packages instead of loose executable tarballs. This follows the same packaging model used by the INDI project and avoids shared-library version failures between Ubuntu releases. The package version includes the Ubuntu codename, such as `2.2.1+es1~jammy` or `2.2.1+es1~noble`, so the package files for Ubuntu 22.04 and Ubuntu 24.04 remain distinct.
 
 Each Linux package set includes:
 
-- `libindi-data_<version>_all.deb`
-- `libindi1_<version>_<arch>.deb`
-- `indi-bin_<version>_<arch>.deb`
+- `libindi-data_<version>~<distro>_all.deb`
+- `libindi1_<version>~<distro>_<arch>.deb`
+- `indi-bin_<version>~<distro>_<arch>.deb`
 - checksums
 - installation notes and release notes
 

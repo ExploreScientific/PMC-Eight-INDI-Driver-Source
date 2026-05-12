@@ -18,6 +18,8 @@ builds in a temporary copy, and copies the generated .deb packages to
 OUTPUT_DIR. Building on each target Ubuntu/Raspberry Pi OS release lets
 dpkg-shlibdeps generate the correct runtime dependencies for that release
 (for example libcfitsio9 on Ubuntu 22.04 or libcfitsio10t64 on Ubuntu 24.04).
+The generated Debian package version includes the distro codename so package
+assets from different OS releases do not overwrite each other on GitHub.
 
 Environment:
   PMC8_BETA_VERSION   Release label, default ${VERSION_LABEL}
@@ -78,15 +80,16 @@ detect_arch() {
 
 derive_deb_version() {
     local label="$1"
+    local distro="$2"
     local version
     version="${label#PMC8-INDI-}"
     version="${version//-es/+es}"
-    echo "${version}"
+    echo "${version}~${distro}"
 }
 
 DISTRO="${PMC8_DEB_DISTRO:-$(detect_codename)}"
 ARCH="$(detect_arch)"
-DEB_VERSION="${PMC8_DEB_VERSION:-$(derive_deb_version "${VERSION_LABEL}")}"
+DEB_VERSION="${PMC8_DEB_VERSION:-$(derive_deb_version "${VERSION_LABEL}" "${DISTRO}")}"
 WORK_DIR="${BUILD_ROOT}/${PACKAGE_BASENAME}-${VERSION_LABEL}-${DISTRO}-${ARCH}"
 SRC_COPY="${WORK_DIR}/source"
 
