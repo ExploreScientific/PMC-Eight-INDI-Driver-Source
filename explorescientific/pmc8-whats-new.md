@@ -32,25 +32,46 @@ SkySafari-specific ASCOM variable-rate suppression was intentionally not ported 
 - Improved WiFi/Ethernet connection tolerance for PMC-Eight command responses.
 - Improved behavior when Park or Home motion stops before the expected motor target is reached.
 
-### Beta Binary Artifacts
+### Beta Binary Artifacts And Debian Packaging
 
-The beta release provides compiled server/driver artifacts for:
+The beta release now uses INDI-style Debian packages for Linux beta testing. This replaces the earlier Linux tarball approach for customer testing.
 
-- Linux PC/notebook x86_64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz`
-- Raspberry Pi 64-bit Linux arm64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz`
+The reason for the change is shared-library compatibility. A raw Linux executable can fail on a different Ubuntu/Raspberry Pi OS release if it was linked against a different runtime library version, such as `libcfitsio.so.9` versus `libcfitsio10t64`. Debian packaging handles this the same way the INDI project handles it: packages are built on the target distribution, and Debian tooling records the correct runtime dependencies for that distribution.
+
+The Linux beta release provides package sets for:
+
+- Linux PC/notebook Ubuntu 22.04 x86_64
+- Linux PC/notebook Ubuntu 24.04 x86_64
+- Raspberry Pi 64-bit Ubuntu 22.04 arm64
+- Raspberry Pi 64-bit Ubuntu 24.04 arm64
+
+Each Linux package set includes the generated runtime packages:
+
+- `libindi-data_<version>_all.deb`
+- `libindi1_<version>_<arch>.deb`
+- `indi-bin_<version>_<arch>.deb`
+
+Users install the matching package set with:
+
+```bash
+sudo apt update
+sudo apt install ./libindi-data_*.deb ./libindi1_*.deb ./indi-bin_*.deb
+```
+
+The macOS release continues to provide architecture-specific ZIP artifacts:
+
 - macOS Apple Silicon arm64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip`
 - macOS Intel x86_64: `pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64.zip`
 
-Each artifact includes a matching beta stack built from this source tree:
+Legacy Linux tarball artifacts, if present, should be considered superseded by the Debian package sets.
 
-- `bin/indi_pmc8_telescope`
-- `bin/indiserver`
-- matching INDI shared libraries
-- `README-INSTALL.md`
-- `MANIFEST.txt`
-- this `pmc8-whats-new.md` release note
+The package/artifact contents are described in:
 
-These artifacts are not complete KStars distributions. They are intended for beta testers who already have a working INDI/KStars/Ekos environment and are comfortable replacing/restoring INDI server/driver binaries.
+```text
+explorescientific/pmc8-beta-artifacts.md
+```
+
+These packages are not complete KStars distributions. They are intended for beta testers who already have a working INDI/KStars/Ekos environment and are comfortable installing/restoring INDI beta packages.
 
 ### Goto And Slew Accuracy
 

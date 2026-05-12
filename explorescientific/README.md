@@ -5,10 +5,35 @@ This folder contains Explore Scientific maintenance notes for the PMC-Eight INDI
 ## Documents
 
 - [What's New](pmc8-whats-new.md)
+- [Beta Artifacts And Debian Packages](pmc8-beta-artifacts.md)
 - [Firmware Compatibility](pmc8-firmware-compatibility.md)
 - [Maintenance Governance](pmc8-maintenance-governance.md)
 - [Release Checklist](pmc8-release-checklist.md)
 - [Conversion Fixture](pmc8_conversion_fixture.py)
+
+## Beta Packaging
+
+Linux beta artifacts are built as INDI-style Debian packages. This follows the same dependency model used by the INDI project and avoids raw-executable shared-library failures between Ubuntu/Raspberry Pi OS releases.
+
+For Linux beta testing, use the package set that matches the target OS release and architecture:
+
+- Ubuntu 22.04 x86_64
+- Ubuntu 24.04 x86_64
+- Ubuntu 22.04 arm64
+- Ubuntu 24.04 arm64
+
+Install the generated runtime packages with:
+
+```bash
+sudo apt update
+sudo apt install ./libindi-data_*.deb ./libindi1_*.deb ./indi-bin_*.deb
+```
+
+The package build script is:
+
+```bash
+bash explorescientific/package_pmc8_debian_packages.sh
+```
 
 ## Version Labeling
 

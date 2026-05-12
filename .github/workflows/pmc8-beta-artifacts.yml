@@ -24,30 +24,43 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Linux PC x86_64
+          - name: Linux PC x86_64 Ubuntu 22.04 packages
             runner: ubuntu-22.04
-            platform: linux-x86_64
-          - name: Raspberry Pi Linux arm64
+            platform: ubuntu-22.04-x86_64-deb
+            distro: jammy
+          - name: Linux PC x86_64 Ubuntu 24.04 packages
+            runner: ubuntu-24.04
+            platform: ubuntu-24.04-x86_64-deb
+            distro: noble
+          - name: Raspberry Pi Linux arm64 Ubuntu 22.04 packages
             runner: ubuntu-22.04-arm
-            platform: linux-arm64
+            platform: ubuntu-22.04-arm64-deb
+            distro: jammy
+          - name: Raspberry Pi Linux arm64 Ubuntu 24.04 packages
+            runner: ubuntu-24.04-arm
+            platform: ubuntu-24.04-arm64-deb
+            distro: noble
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install Debian package build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential cmake git pkg-config zip \
+            build-essential cmake git pkg-config rsync \
+            dpkg-dev devscripts debhelper cdbs fakeroot \
             libev-dev zlib1g-dev libcfitsio-dev libnova-dev libusb-1.0-0-dev \
-            libcurl4-openssl-dev libgsl-dev libjpeg-dev libfftw3-dev
+            libcurl4-gnutls-dev libgsl-dev libjpeg-dev libfftw3-dev \
+            libtheora-dev libogg-dev libudev-dev librtlsdr-dev liberfa-dev
 
-      - name: Build and package PMC-Eight driver
+      - name: Build INDI-style Debian packages
         env:
           PMC8_BETA_VERSION: ${{ github.event.inputs.release_label }}
           PMC8_BETA_PLATFORM: ${{ matrix.platform }}
+          PMC8_DEB_DISTRO: ${{ matrix.distro }}
           OUTPUT_DIR: ${{ github.workspace }}/artifacts
-        run: bash explorescientific/package_pmc8_beta.sh
+        run: bash explorescientific/package_pmc8_debian_packages.sh
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4

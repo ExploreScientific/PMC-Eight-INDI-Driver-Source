@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PMC-Eight INDI Driver Beta Announcement</title>
+</head>
+<body style="margin:0; padding:24px; background:#f4f6f8; color:#1f2933; font-family:Arial, Helvetica, sans-serif; line-height:1.55;">
+  <div style="max-width:900px; margin:0 auto; background:#ffffff; border:1px solid #d9e2ec; padding:28px;">
+    <p style="margin:0 0 18px 0; padding:12px 14px; background:#fff8db; border:1px solid #f0c36d; color:#4f3b00;"><strong>SUPERSEDED INSTALL NOTE:</strong> Linux beta artifacts are now distributed as INDI-style Debian packages, not Linux tarballs. Use the matching Ubuntu 22.04/24.04 x86_64 or arm64 package set and install with <code>sudo apt install ./libindi-data_*.deb ./libindi1_*.deb ./indi-bin_*.deb</code>. The authoritative updated instructions are in <code>explorescientific/pmc8-beta-artifacts.md</code> and <code>explorescientific/pmc8-groups-io-binary-beta-announcement.md</code>.</p>
+    <p style="margin:0 0 18px 0; font-size:15px;"><strong>Subject:</strong> PMC-Eight INDI Driver Beta Binary Builds Available for Linux PC, Raspberry Pi, and macOS</p>
+
+    <p style="margin:0 0 16px 0;">Hello PMC-Eight users,</p>
+
+    <p style="margin:0 0 16px 0;">I want to announce the availability of updated <strong>Explore Scientific PMC-Eight INDI server/driver beta builds</strong> for testing on Linux PC/notebook systems, Raspberry Pi 64-bit Linux systems, and macOS systems running KStars/Ekos/INDI.</p>
+
+    <p style="margin:0 0 16px 0;">My longer-term plan is to provide an <strong>Explore Scientific maintained PMC-Eight INDI driver source branch and beta build process</strong> so the INDI driver can stay in closer parity with the latest Explore Scientific ASCOM driver. The ASCOM driver has historically been the authoritative implementation for PMC-Eight mount behavior, and this INDI update begins bringing the INDI driver into alignment with that code path.</p>
+
+    <p style="margin:0 0 16px 0;">This beta branch and these beta artifacts are the first step in that process. The plan is to make the updated Explore Scientific INDI driver available to beta testers, collect feedback from PMC-Eight users, correct issues found during testing, and then submit the validated changes as a pull request to the official INDI project repository.</p>
+
+    <p style="margin:0 0 16px 0;">Once the changes are submitted to the INDI project, Explore Scientific will work through the INDI maintainer review process so the update can be accepted into the official INDI code base. After that, the updated PMC-Eight driver can flow into normal INDI releases and downstream distributions.</p>
+
+    <p style="margin:0 0 16px 0;">That upstream step is important. Products and platforms that use INDI, including ASIAIR and other astronomy software or appliance distributions, generally incorporate INDI driver updates from the official INDI project repository or from official INDI release packages. Explore Scientific cannot directly control when each downstream product vendor incorporates an INDI update, but getting the PMC-Eight driver changes accepted into the official INDI repository is the correct path for making the update broadly available to general product customers.</p>
+
+    <p style="margin:0 0 18px 0;">This beta release is therefore intended to validate the updated driver before it is submitted upstream. It is still beta software. Please test only if you are comfortable replacing a driver executable, restoring your previous driver if needed, and collecting logs.</p>
+
+    <table style="width:100%; border-collapse:collapse; margin:18px 0 24px 0; font-size:15px;">
+      <tr>
+        <td style="width:120px; padding:8px 10px; border:1px solid #d9e2ec; background:#f8fafc;"><strong>Repository</strong></td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><a href="https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source" style="color:#0b63ce;">https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source</a></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec; background:#f8fafc;"><strong>Branch</strong></td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><code style="font-family:Consolas, Menlo, monospace;">explorescientific/pmc8-maintenance</code></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec; background:#f8fafc;"><strong>Release</strong></td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><a href="https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1" style="color:#0b63ce;">PMC8-INDI-2.2.1-es1 beta release</a></td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 24px 0;">Download the beta artifacts from the <strong>Assets</strong> section of the GitHub Release.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Available Beta Artifacts</h2>
+
+    <p style="margin:0 0 12px 0;">The beta driver executable is <code style="font-family:Consolas, Menlo, monospace; background:#f1f5f9; padding:2px 4px;">indi_pmc8_telescope</code>. This executable is used by <code style="font-family:Consolas, Menlo, monospace; background:#f1f5f9; padding:2px 4px;">indiserver</code> when KStars/Ekos starts the Explore Scientific PMC-Eight telescope driver.</p>
+
+    <p style="margin:0 0 8px 0;">Each beta artifact includes:</p>
+    <ul style="margin:0 0 18px 24px; padding:0;">
+      <li><code style="font-family:Consolas, Menlo, monospace;">indi_pmc8_telescope</code></li>
+      <li>a matching <code style="font-family:Consolas, Menlo, monospace;">indiserver</code></li>
+      <li>matching INDI shared libraries built from the same source tree</li>
+      <li>installation notes and release notes</li>
+    </ul>
+
+    <table style="width:100%; border-collapse:collapse; margin:12px 0 20px 0; font-size:15px;">
+      <tr style="background:#eaf2fb;">
+        <th style="text-align:left; padding:8px 10px; border:1px solid #d9e2ec;">Platform</th>
+        <th style="text-align:left; padding:8px 10px; border:1px solid #d9e2ec;">Artifact</th>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;">Linux PC / notebook x86_64</td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz</code></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;">Raspberry Pi 64-bit Linux arm64</td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz</code></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;">macOS Apple Silicon</td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip</code></td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;">macOS Intel</td>
+        <td style="padding:8px 10px; border:1px solid #d9e2ec;"><code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64.zip</code></td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 18px 0;">The macOS build is split into Apple Silicon and Intel builds because macOS INDI/Homebrew dependencies are architecture-specific.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">What Has Changed</h2>
+
+    <p style="margin:0 0 8px 0;">This beta update includes a substantial PMC-Eight driver maintenance update. Major changes include:</p>
+    <ul style="margin:0 0 18px 24px; padding:0;">
+      <li>ASCOM-style PMC-Eight slew compensation logic.</li>
+      <li>Improved goto accuracy behavior.</li>
+      <li>A post-goto correction pass after the initial slew completes.</li>
+      <li>Improved Rev2 firmware support using the <code style="font-family:Consolas, Menlo, monospace;">ESV!</code> state-vector command.</li>
+      <li>Firmware-timed pulse guiding using the PMC-Eight <code style="font-family:Consolas, Menlo, monospace;">ESSq</code> command where supported.</li>
+      <li>Custom DEC tracking-rate support using high-precision Rev2 firmware commands.</li>
+      <li>Improved WiFi/Ethernet response handling.</li>
+      <li>Better tolerance of WiFi stream artifacts such as greetings, reconnect echoes, and noisy leading characters.</li>
+      <li>Configurable INDI Park support using PMC-Eight motor/encoder counts.</li>
+      <li>INDI Home support, with Home defined as fixed motor position (0,0).</li>
+      <li>Expanded mount model support.</li>
+      <li>Removal of obsolete/non-needed Scotty mount selection.</li>
+      <li>Updated manual axis-rate handling based on the selected mount's actual motor-count constants.</li>
+      <li>Updated RA/DEC motor-count conversion to better match the ASCOM implementation.</li>
+      <li>Added Explore Scientific maintenance documentation and a conversion test fixture.</li>
+    </ul>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Important Beta Notes</h2>
+
+    <p style="margin:0 0 12px 0;">These artifacts are not complete KStars distributions. They provide a matching beta INDI server/runtime layer plus the PMC-Eight telescope driver executable.</p>
+    <p style="margin:0 0 12px 0;">You must already have a working KStars/Ekos/INDI installation before installing one of these beta artifacts.</p>
+    <p style="margin:0 0 18px 0;">If you are using your PMC-Eight system for an important observing session, outreach event, or imaging run, please use the current released INDI driver unless you are specifically prepared to test and troubleshoot.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Linux PC / Notebook Install Instructions</h2>
+
+    <p style="margin:0 0 10px 0;">Use this artifact on a normal Linux PC or notebook with an x86_64 processor.</p>
+    <p style="margin:0 0 8px 0;"><strong>Download:</strong> <code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz</code></p>
+    <p style="margin:0 0 8px 0;">The file is available from the GitHub Release assets: <a href="https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1" style="color:#0b63ce;">PMC8-INDI-2.2.1-es1 beta release</a></p>
+    <p style="margin:14px 0 6px 0;"><strong>Install:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 12px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">tar -xzf pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64.tar.gz
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-x86_64
+sudo ./install.sh</pre>
+    <p style="margin:0 0 6px 0;"><strong>Verify:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 12px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">which indi_pmc8_telescope
+which indiserver</pre>
+    <p style="margin:0 0 18px 0;">The preferred result for the driver is <code style="font-family:Consolas, Menlo, monospace;">/usr/local/bin/indi_pmc8_telescope</code>. Then restart KStars/Ekos and test your PMC-Eight profile.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Raspberry Pi 64-Bit Linux Install Instructions</h2>
+
+    <p style="margin:0 0 10px 0;">Use this artifact on a Raspberry Pi running a 64-bit Linux operating system.</p>
+    <p style="margin:0 0 8px 0;"><strong>Download:</strong> <code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz</code></p>
+    <p style="margin:0 0 8px 0;">The file is available from the GitHub Release assets: <a href="https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1" style="color:#0b63ce;">PMC8-INDI-2.2.1-es1 beta release</a></p>
+    <p style="margin:14px 0 6px 0;"><strong>Install:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 12px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">tar -xzf pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64.tar.gz
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-linux-arm64
+sudo ./install.sh</pre>
+    <p style="margin:0 0 6px 0;"><strong>Verify:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 12px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">which indi_pmc8_telescope
+which indiserver</pre>
+    <p style="margin:0 0 18px 0;">Then restart KStars/Ekos or restart the INDI server software you use on the Raspberry Pi. This beta artifact is intended for 64-bit Raspberry Pi systems. It is not intended for older 32-bit Raspberry Pi OS installations.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">macOS Install Instructions</h2>
+
+    <p style="margin:0 0 12px 0;">macOS beta testing is possible, but it should be considered <strong>advanced testing at this stage</strong>.</p>
+    <p style="margin:0 0 12px 0;">The main caveat is that KStars/Ekos on macOS may use bundled INDI components depending on how KStars was installed. A driver installed into <code style="font-family:Consolas, Menlo, monospace;">/usr/local/bin</code> or <code style="font-family:Consolas, Menlo, monospace;">/opt/homebrew/bin</code> may not automatically be used by a bundled KStars application unless that KStars installation is configured to use the same <code style="font-family:Consolas, Menlo, monospace;">indiserver</code> and driver path.</p>
+    <p style="margin:0 0 12px 0;">Mac users who want to test should be comfortable with Homebrew, command-line tools, and confirming which <code style="font-family:Consolas, Menlo, monospace;">indiserver</code> their KStars/Ekos installation is using.</p>
+    <p style="margin:0 0 8px 0;"><strong>Apple Silicon download:</strong> <code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip</code></p>
+    <p style="margin:0 0 8px 0;"><strong>Intel download:</strong> <code style="font-family:Consolas, Menlo, monospace;">pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-x86_64.zip</code></p>
+    <p style="margin:0 0 8px 0;">Both macOS files are available from the GitHub Release assets: <a href="https://github.com/ExploreScientific/PMC-Eight-INDI-Driver-Source/releases/tag/PMC8-INDI-2.2.1-es1" style="color:#0b63ce;">PMC8-INDI-2.2.1-es1 beta release</a></p>
+    <p style="margin:14px 0 6px 0;"><strong>Install on Apple Silicon:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 12px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">unzip pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64.zip
+cd pmc8-indi-beta-PMC8-INDI-2.2.1-es1-macos-arm64
+sudo ./install.sh "$(brew --prefix)"</pre>
+    <p style="margin:0 0 12px 0;">For Intel Macs, use the <code style="font-family:Consolas, Menlo, monospace;">macos-x86_64</code> artifact and directory name instead.</p>
+    <p style="margin:0 0 6px 0;"><strong>Verify:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 12px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">which indi_pmc8_telescope
+which indiserver</pre>
+    <p style="margin:0 0 8px 0;">On Apple Silicon Macs, the driver will usually be installed under <code style="font-family:Consolas, Menlo, monospace;">/opt/homebrew/bin</code>.</p>
+    <p style="margin:0 0 18px 0;">On Intel Macs, the driver will usually be installed under <code style="font-family:Consolas, Menlo, monospace;">/usr/local/bin</code>. Before testing with KStars/Ekos on macOS, please confirm that KStars is using the same INDI installation where the beta <code style="font-family:Consolas, Menlo, monospace;">indi_pmc8_telescope</code> driver was installed.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Testing Requested</h2>
+
+    <p style="margin:0 0 8px 0;">Please test only if you are comfortable restoring your previous INDI driver if needed. I am especially interested in feedback on:</p>
+    <ul style="margin:0 0 18px 24px; padding:0;">
+      <li>USB serial connection.</li>
+      <li>WiFi connection.</li>
+      <li>Goto accuracy.</li>
+      <li>Park behavior.</li>
+      <li>Home behavior.</li>
+      <li>Manual motion controls.</li>
+      <li>Pulse guiding behavior.</li>
+      <li>Mount model selection.</li>
+      <li>Behavior with different PMC-Eight firmware versions.</li>
+      <li>Raspberry Pi 64-bit compatibility.</li>
+      <li>macOS KStars/Ekos driver discovery and launch behavior.</li>
+    </ul>
+
+    <p style="margin:0 0 6px 0;"><strong>Please include the following information when reporting results:</strong></p>
+    <pre style="white-space:pre-wrap; background:#f1f5f9; border:1px solid #d9e2ec; padding:12px; margin:0 0 18px 0; font-family:Consolas, Menlo, monospace; font-size:14px;">Mount model:
+PMC-Eight firmware version:
+Connection type: USB serial / WiFi / Bluetooth serial:
+Operating system and version:
+Hardware platform: Linux PC / Raspberry Pi / Mac Apple Silicon / Mac Intel:
+KStars version:
+INDI version:
+How KStars/Ekos was installed:
+Artifact downloaded:
+Install result:
+What worked:
+What failed:
+Steps to reproduce:
+INDI driver log:
+Ekos log:</pre>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Restoring The Previous Driver</h2>
+
+    <p style="margin:0 0 12px 0;">The installer backs up an existing driver in the same install directory with a timestamped <code style="font-family:Consolas, Menlo, monospace;">.bak</code> suffix before installing the beta driver.</p>
+    <p style="margin:0 0 8px 0;">For example: <code style="font-family:Consolas, Menlo, monospace;">indi_pmc8_telescope.bak-YYYYMMDD-HHMMSS</code></p>
+    <p style="margin:0 0 18px 0;">To restore manually, stop KStars/Ekos/INDI, copy the backup file back to <code style="font-family:Consolas, Menlo, monospace;">indi_pmc8_telescope</code>, and restart KStars/Ekos.</p>
+
+    <h2 style="margin:28px 0 10px 0; padding-bottom:6px; border-bottom:2px solid #d9e2ec; color:#102a43; font-size:21px;">Reporting Issues</h2>
+
+    <p style="margin:0 0 12px 0;">For beta feedback, please include as much detail as possible. Logs are extremely helpful, especially INDI driver logs and Ekos logs.</p>
+    <p style="margin:0 0 12px 0;">The goal is to validate this Explore Scientific maintained branch, correct any issues found by beta testers, and then submit the driver changes upstream to the INDI project so the PMC-Eight driver can eventually be distributed through the normal INDI/KStars release process.</p>
+    <p style="margin:0 0 18px 0;">Once accepted into the official INDI project, the updated driver will be available for downstream distributors and product vendors to incorporate according to their own update schedules.</p>
+
+    <p style="margin:0 0 18px 0;">Thank you to anyone willing to help test and improve PMC-Eight support for the Linux, Raspberry Pi, and macOS astronomy community.</p>
+
+    <p style="margin:0;">Clear skies,<br>Jerry Hubbell<br>Explore Scientific</p>
+  </div>
+</body>
+</html>
