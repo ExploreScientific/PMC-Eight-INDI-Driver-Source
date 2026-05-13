@@ -8,7 +8,7 @@
 [![PyIndi](https://github.com/indilib/indi/actions/workflows/linux-pyindi.yml/badge.svg)](https://github.com/indilib/indi/actions)
 
 INDI is a standard for astronomical instrumentation control. INDI Library is an Open Source POSIX implementation of the
-[Instrument-Neutral-Device-Interface protocol](http://www.clearskyinstitute.com/INDI/INDI.pdf).
+[Instrument-Neutral Distributed Interface protocol](https://docs.indilib.org/protocol/).
 
 INDI core library is composed of the following components:
 
