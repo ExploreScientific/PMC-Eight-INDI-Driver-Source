@@ -84,7 +84,7 @@ derive_deb_version() {
     local version
     version="${label#PMC8-INDI-}"
     version="${version//-es/+es}"
-    echo "${version}~${distro}"
+    echo "${version}.${distro}"
 }
 
 DISTRO="${PMC8_DEB_DISTRO:-$(detect_codename)}"

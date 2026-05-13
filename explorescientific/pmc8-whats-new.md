@@ -36,7 +36,7 @@ SkySafari-specific ASCOM variable-rate suppression was intentionally not ported 
 
 The beta release now uses INDI-style Debian packages for Linux beta testing. This replaces the earlier Linux tarball approach for customer testing.
 
-The reason for the change is shared-library compatibility. A raw Linux executable can fail on a different Ubuntu/Raspberry Pi OS release if it was linked against a different runtime library version, such as `libcfitsio.so.9` versus `libcfitsio10t64`. Debian packaging handles this the same way the INDI project handles it: packages are built on the target distribution, and Debian tooling records the correct runtime dependencies for that distribution. The package version includes the distribution codename, such as `2.2.1+es1~jammy` or `2.2.1+es1~noble`, so release assets from different Ubuntu releases remain distinct.
+The reason for the change is shared-library compatibility. A raw Linux executable can fail on a different Ubuntu/Raspberry Pi OS release if it was linked against a different runtime library version, such as `libcfitsio.so.9` versus `libcfitsio10t64`. Debian packaging handles this the same way the INDI project handles it: packages are built on the target distribution, and Debian tooling records the correct runtime dependencies for that distribution. The package version includes the distribution codename, such as `2.2.1+es1.jammy` or `2.2.1+es1.noble`, so release assets from different Ubuntu releases remain distinct.
 
 The Linux beta release provides package sets for:
 
@@ -47,9 +47,9 @@ The Linux beta release provides package sets for:
 
 Each Linux package set includes the generated runtime packages:
 
-- `libindi-data_<version>~<distro>_all.deb`
-- `libindi1_<version>~<distro>_<arch>.deb`
-- `indi-bin_<version>~<distro>_<arch>.deb`
+- `libindi-data_<version>.<distro>_all.deb`
+- `libindi1_<version>.<distro>_<arch>.deb`
+- `indi-bin_<version>.<distro>_<arch>.deb`
 
 Users install the matching package set with:
 
